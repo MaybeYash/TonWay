@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TonCoin Gift Giveaway</title>
+  <title>TonCoin Gift Giveaway with Referrals</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -40,6 +40,10 @@
       padding: 10px;
       margin-top: 20px;
     }
+    #referralSection {
+      margin-top: 30px;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
@@ -56,6 +60,13 @@
       <input type="text" id="tonAddress" placeholder="Enter your TON Wallet address" />
       <button id="submitAddressButton" class="btn-primary">Submit Address</button>
     </div>
+
+    <div id="referralSection">
+      <h3>Your Invite Link:</h3>
+      <p id="inviteLink"></p>
+      <button id="copyInviteButton" class="btn-primary">Copy Invite Link</button>
+      <h3>Total Invited Users: <span id="totalInvitedUsers">0</span></h3>
+    </div>
   </div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -63,23 +74,40 @@
     document.addEventListener('DOMContentLoaded', function () {
       const tg = window.Telegram.WebApp; // Initialize Telegram Web App API
 
-      // Check if the app is opened inside Telegram
       if (!tg.initDataUnsafe?.user?.id) {
         document.body.innerHTML = '<h2>This app only works inside Telegram.</h2>';
         return;
       }
 
       const userId = tg.initDataUnsafe.user.id; // Get Telegram User ID
+      const referrerId = new URLSearchParams(window.location.search).get('ref'); // Check if there is a referrer
+      const inviteLink = `${window.location.origin}${window.location.pathname}?ref=${userId}`;
+      
+      document.getElementById('inviteLink').innerText = inviteLink;
+
       const claimButton = document.getElementById('claimButton');
       const rewardSection = document.getElementById('rewardSection');
       const addressSection = document.getElementById('addressSection');
       const statusMessage = document.getElementById('statusMessage');
       const submitAddressButton = document.getElementById('submitAddressButton');
       const tonAddressInput = document.getElementById('tonAddress');
+      const copyInviteButton = document.getElementById('copyInviteButton');
+      const totalInvitedUsers = document.getElementById('totalInvitedUsers');
 
       let claimCount = 0;
       let maxClaims = Infinity; // Default is unlimited
       const claimedUsers = JSON.parse(localStorage.getItem('claimedUsers') || '[]');
+      const referralData = JSON.parse(localStorage.getItem('referralData') || '{}');
+      
+      // Track Referrals
+      if (referrerId) {
+        referralData[referrerId] = referralData[referrerId] || { totalInvites: 0, successfulInvites: 0 };
+        referralData[referrerId].totalInvites += 1;
+        localStorage.setItem('referralData', JSON.stringify(referralData));
+      }
+
+      // Display total invited users
+      totalInvitedUsers.innerText = referralData[userId]?.totalInvites || 0;
 
       // Check if this user has already claimed the reward
       if (claimedUsers.includes(userId)) {
@@ -88,6 +116,15 @@
         claimButton.disabled = true;
         return;
       }
+
+      // Function to handle invite link copying
+      copyInviteButton.addEventListener('click', function () {
+        navigator.clipboard.writeText(inviteLink).then(() => {
+          alert('Invite link copied to clipboard!');
+        }).catch(() => {
+          alert('Failed to copy invite link.');
+        });
+      });
 
       // Check URL parameters to determine the mode
       const urlParams = new URLSearchParams(window.location.search);
@@ -131,6 +168,15 @@
           localStorage.setItem('claimCount', claimCount.toString());
           claimedUsers.push(userId); // Track the user who claimed the reward
           localStorage.setItem('claimedUsers', JSON.stringify(claimedUsers));
+
+          if (referrerId) {
+            referralData[referrerId].successfulInvites += 1;
+            // Give referrer 1 additional chance for every 2 successful invites
+            if (referralData[referrerId].successfulInvites % 2 === 0) {
+              alert(`Referrer ID ${referrerId} has earned 1 additional chance!`);
+            }
+            localStorage.setItem('referralData', JSON.stringify(referralData));
+          }
 
           rewardSection.style.display = 'none';
           addressSection.style.display = 'block';
