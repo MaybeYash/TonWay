@@ -62,7 +62,14 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const tg = window.Telegram.WebApp; // Initialize Telegram Web App API
-      const userId = tg.initDataUnsafe?.user?.id || null; // Get Telegram User ID
+
+      // Check if the app is opened inside Telegram
+      if (!tg.initDataUnsafe?.user?.id) {
+        document.body.innerHTML = '<h2>This app only works inside Telegram.</h2>';
+        return;
+      }
+
+      const userId = tg.initDataUnsafe.user.id; // Get Telegram User ID
       const claimButton = document.getElementById('claimButton');
       const rewardSection = document.getElementById('rewardSection');
       const addressSection = document.getElementById('addressSection');
@@ -75,7 +82,7 @@
       const claimedUsers = JSON.parse(localStorage.getItem('claimedUsers') || '[]');
 
       // Check if this user has already claimed the reward
-      if (userId && claimedUsers.includes(userId)) {
+      if (claimedUsers.includes(userId)) {
         statusMessage.innerText = 'You have already claimed the reward!';
         claimButton.classList.add('btn-disabled');
         claimButton.disabled = true;
@@ -119,7 +126,7 @@
 
       // Function to handle the claim button click
       claimButton.addEventListener('click', function () {
-        if (claimCount < maxClaims && userId && !claimedUsers.includes(userId)) {
+        if (claimCount < maxClaims && !claimedUsers.includes(userId)) {
           claimCount++;
           localStorage.setItem('claimCount', claimCount.toString());
           claimedUsers.push(userId); // Track the user who claimed the reward
