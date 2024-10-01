@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TonCoin Gift Giveaway</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      text-align: center;
+      padding: 50px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+    }
+    button {
+      padding: 15px 30px;
+      margin-top: 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+    }
+    .btn-primary {
+      background: #4caf50;
+      color: #fff;
+    }
+    .btn-disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    input {
+      width: 80%;
+      padding: 10px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>TonCoin Gift Giveaway</h1>
+    <p id="statusMessage">Be the first to claim the reward!</p>
+
+    <div id="rewardSection">
+      <button id="claimButton" class="btn-primary">Tap to Claim</button>
+    </div>
+
+    <div id="addressSection" style="display: none;">
+      <h3>Congratulations! You are the winner.</h3>
+      <input type="text" id="tonAddress" placeholder="Enter your TON Wallet address" />
+      <button id="submitAddressButton" class="btn-primary">Submit Address</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const claimButton = document.getElementById('claimButton');
+      const rewardSection = document.getElementById('rewardSection');
+      const addressSection = document.getElementById('addressSection');
+      const statusMessage = document.getElementById('statusMessage');
+      const submitAddressButton = document.getElementById('submitAddressButton');
+      const tonAddressInput = document.getElementById('tonAddress');
+
+      let claimCount = 0;
+      let maxClaims = Infinity; // Default is unlimited
+
+      // Check URL parameters to determine the mode
+      const urlParams = new URLSearchParams(window.location.search);
+      const startApp = urlParams.get('startapp');
+      
+      if (startApp) {
+        if (startApp.includes('openTonGift_')) {
+          const parts = startApp.split('_');
+          const limit = parts[1];
+
+          // Set claim limit based on startapp parameter
+          if (limit === 'less') {
+            maxClaims = Infinity;
+          } else if (!isNaN(parseInt(limit))) {
+            maxClaims = parseInt(limit);
+          }
+        }
+      }
+
+      // Update UI based on the claim limit
+      if (maxClaims === Infinity) {
+        statusMessage.innerText = 'The reward is available for everyone. Tap to claim!';
+      } else {
+        statusMessage.innerText = `Be the first ${maxClaims} users to claim the reward!`;
+      }
+
+      // Check local storage for the number of claims
+      const currentClaims = localStorage.getItem('claimCount') || 0;
+      claimCount = parseInt(currentClaims);
+
+      if (claimCount >= maxClaims) {
+        statusMessage.innerText = 'Sorry, the reward has already been claimed!';
+        claimButton.classList.add('btn-disabled');
+        claimButton.disabled = true;
+      }
+
+      // Function to handle the claim button click
+      claimButton.addEventListener('click', function () {
+        if (claimCount < maxClaims) {
+          claimCount++;
+          localStorage.setItem('claimCount', claimCount.toString());
+          rewardSection.style.display = 'none';
+          addressSection.style.display = 'block';
+          statusMessage.innerText = 'Congratulations! You are the winner. Please enter your wallet address.';
+        } else {
+          statusMessage.innerText = 'Sorry, the reward has already been claimed!';
+          claimButton.classList.add('btn-disabled');
+          claimButton.disabled = true;
+        }
+      });
+
+      // Function to handle address submission
+      submitAddressButton.addEventListener('click', function () {
+        const tonAddress = tonAddressInput.value.trim();
+        if (tonAddress) {
+          alert(`Address submitted: ${tonAddress}`);
+          statusMessage.innerText = 'Your address has been submitted successfully!';
+          submitAddressButton.classList.add('btn-disabled');
+          submitAddressButton.disabled = true;
+        } else {
+          alert('Please enter a valid TON wallet address.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
