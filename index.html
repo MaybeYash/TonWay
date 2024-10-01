@@ -58,8 +58,11 @@
     </div>
   </div>
 
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      const tg = window.Telegram.WebApp; // Initialize Telegram Web App API
+      const userId = tg.initDataUnsafe?.user?.id || null; // Get Telegram User ID
       const claimButton = document.getElementById('claimButton');
       const rewardSection = document.getElementById('rewardSection');
       const addressSection = document.getElementById('addressSection');
@@ -69,6 +72,15 @@
 
       let claimCount = 0;
       let maxClaims = Infinity; // Default is unlimited
+      const claimedUsers = JSON.parse(localStorage.getItem('claimedUsers') || '[]');
+
+      // Check if this user has already claimed the reward
+      if (userId && claimedUsers.includes(userId)) {
+        statusMessage.innerText = 'You have already claimed the reward!';
+        claimButton.classList.add('btn-disabled');
+        claimButton.disabled = true;
+        return;
+      }
 
       // Check URL parameters to determine the mode
       const urlParams = new URLSearchParams(window.location.search);
@@ -107,14 +119,17 @@
 
       // Function to handle the claim button click
       claimButton.addEventListener('click', function () {
-        if (claimCount < maxClaims) {
+        if (claimCount < maxClaims && userId && !claimedUsers.includes(userId)) {
           claimCount++;
           localStorage.setItem('claimCount', claimCount.toString());
+          claimedUsers.push(userId); // Track the user who claimed the reward
+          localStorage.setItem('claimedUsers', JSON.stringify(claimedUsers));
+
           rewardSection.style.display = 'none';
           addressSection.style.display = 'block';
           statusMessage.innerText = 'Congratulations! You are the winner. Please enter your wallet address.';
         } else {
-          statusMessage.innerText = 'Sorry, the reward has already been claimed!';
+          statusMessage.innerText = 'Sorry, you have already claimed the reward or it is no longer available!';
           claimButton.classList.add('btn-disabled');
           claimButton.disabled = true;
         }
